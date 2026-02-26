@@ -54,10 +54,12 @@ vector<double> NeuralNetwork::predict(DataInstance instance) {
         return vector<double>();
     }
 
-    // BFT implementation goes here
-
-    // 1. Set up your queue initialization
-    // 2. Start visiting nodes using the queue
+    // BFT implementation goes here.
+    // Note: before traversal begins, each input value in `input` must be loaded into
+    // the corresponding input node's postActivationValue. Input nodes are not activated —
+    // their value is passed forward directly.
+    // Use visitPredictNode and visitPredictNeighbor to handle the neural network math
+    // at each step of your traversal.
 
     vector<double> output;
     for (int i = 0; i < outputNodeIds.size(); i++) {
@@ -83,9 +85,13 @@ bool NeuralNetwork::contribute(double y, double p) {
     double outgoingContribution = 0;
     NodeInfo* currNode = nullptr;
 
-    // find each incoming contribution, and contribute to the input layer's outgoing weights
-    // If the node is already found, use its precomputed contribution from the contributions map
-    // There is no need to visitContributeNode for the input layer since there is no bias to update.
+    // DFT implementation goes here.
+    // This function initiates the recursion by calling the recursive helper
+    // starting from each input layer node.
+    // Note: input layer nodes do not have a bias to update, so visitContributeNode
+    // should not be called on them.
+    // The contributions map acts as your "visited" set and also stores each node's
+    // computed contribution so it is not recomputed if reached by multiple paths.
 
 
     flush();
@@ -95,19 +101,23 @@ bool NeuralNetwork::contribute(double y, double p) {
 // STUDENT TODO: IMPLEMENT
 double NeuralNetwork::contribute(int nodeId, const double& y, const double& p) {
 
+    // incomingContribution: the error signal returned by a recursive call on a neighbor.
     double incomingContribution = 0;
+    // outgoingContribution: built up from this node's neighbors, then scaled by
+    // this node's activation derivative before being returned to the previous layer.
     double outgoingContribution = 0;
     NodeInfo* currNode = nodes.at(nodeId);
 
-    // find each incoming contribution, and contribute to the nodes outgoing weights
-    // If the node is already found, use its precomputed contribution from the contributions map
+    // If this node is already in the contributions map, return its stored value immediately.
 
     if (adjacencyList.at(nodeId).empty()) {
-        // base case, we are at the end
+        // Base case: output node (no outgoing connections).
+        // Seeds the backward pass with the initial error signal.
+        // You do not need to understand this derivation.
         outgoingContribution = -1 * ((y - p) / (p * (1 - p)));
-    } 
+    }
 
-    // Now contribute to yourself and prepare the outgoing contribution
+    // Before returning, store outgoingContribution in the contributions map.
 
     return outgoingContribution;
 }
@@ -255,6 +265,12 @@ void NeuralNetwork::loadNetwork(istream& in) {
     setOutputNodeIds(layers.at(layers.size()-1));
 }
 
+// visitPredictNode: called when your BFT dequeues a node.
+// It completes the computation for this node by:
+//   1. Adding the bias to the accumulated weighted sum (preActivationValue)
+//   2. Applying the activation function and storing the result in postActivationValue
+// After this call, the node's output value (postActivationValue) is ready to be
+// passed forward to the next layer via visitPredictNeighbor.
 void NeuralNetwork::visitPredictNode(int vId) {
     // accumulate bias, and activate
     NodeInfo* v = nodes.at(vId);
@@ -262,6 +278,12 @@ void NeuralNetwork::visitPredictNode(int vId) {
     v->activate();
 }
 
+// visitPredictNeighbor: called for each outgoing connection from a dequeued node.
+// It accumulates one term of the weighted sum into the destination node:
+//   dest.preActivationValue += source.postActivationValue * weight
+// This must be called for ALL incoming connections to a node before
+// visitPredictNode is called on that node — which is why BFT is required:
+// it ensures a whole layer's outputs are ready before the next layer is processed.
 void NeuralNetwork::visitPredictNeighbor(Connection c) {
     NodeInfo* v = nodes.at(c.source);
     NodeInfo* u = nodes.at(c.dest);
@@ -269,14 +291,29 @@ void NeuralNetwork::visitPredictNeighbor(Connection c) {
     u->preActivationValue += v->postActivationValue * w;
 }
 
+// visitContributeNode: called after all neighbors of a node have been visited during DFT.
+// outgoingContribution at this point holds the sum of weighted incoming contributions
+// from the next layer. This function:
+//   1. Multiplies outgoingContribution by the activation derivative at this node
+//      (chain rule: how much did this node's activation affect the error?)
+//   2. Accumulates that result into the node's delta (gradient for its bias)
+// After this call, outgoingContribution holds the value to be passed back to
+// the previous layer as their incomingContribution.
 void NeuralNetwork::visitContributeNode(int vId, double& outgoingContribution) {
     NodeInfo* v = nodes.at(vId);
     outgoingContribution *= v->derive();
-    
+
     //contribute bias derivative
     v->delta += outgoingContribution;
 }
 
+// visitContributeNeighbor: called for each outgoing connection during DFT, before visitContributeNode.
+// incomingContribution is the contribution returned by the recursive call on the neighbor (next layer).
+// This function:
+//   1. Adds weight * incomingContribution to outgoingContribution
+//      (this node's share of the error flowing back from the neighbor)
+//   2. Accumulates the weight gradient into c.delta
+//      (how much should this weight change? proportional to incomingContribution * this node's output)
 void NeuralNetwork::visitContributeNeighbor(Connection& c, double& incomingContribution, double& outgoingContribution) {
     NodeInfo* v = nodes.at(c.source);
     // update outgoingContribution

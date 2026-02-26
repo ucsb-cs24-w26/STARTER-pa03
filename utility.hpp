@@ -8,6 +8,15 @@
 #include <string>
 #include <random>
 #include <iostream>
+// FuncSig is a type alias for a function pointer.
+// A function pointer holds the address of a function and allows it to be called indirectly.
+// FuncSig specifically refers to any function that takes a single double and returns a double.
+// This lets us store different activation functions (identity, ReLU, sigmoid) in the same variable
+// and call whichever one is needed at runtime — without needing to know in advance which one it is.
+//
+// Example: FuncSig f = ReLU;  // f now points to the ReLU function
+//          f(2.5);             // calls ReLU(2.5), returns 2.5
+//          f(-1.0);            // calls ReLU(-1.0), returns 0.0
 typedef double(* FuncSig)(double param);
 
 // Utility Functions

@@ -33,14 +33,26 @@ struct NodeInfo {
         // The Derivative of the Activation Function of this node.
         FuncSig activationDerivative;
         
-        // The value of this Node before activation. 
+        // The value of this Node before the activation function is applied.
+        // This is the weighted sum of inputs plus the bias: z = (w1*x1 + w2*x2 + ... + bias)
+        // We need to store this separately because the activation derivative during backprop
+        // is evaluated at this value: derive() uses preActivationValue, not postActivationValue.
         double preActivationValue;
-        // The value of this Node after activation.
+
+        // The value of this Node after the activation function is applied: a = activate(z)
+        // This is the value that gets passed forward to the next layer as input.
+        // Both values must be stored because the forward pass needs postActivationValue
+        // and the backward pass needs preActivationValue.
         double postActivationValue;
 
-        // The bias of this Node.
+        // The bias of this Node. Added to the weighted sum before activation.
         double bias;
-        // The accumulated derivative for this bias
+
+        // The accumulated gradient for this node's bias.
+        // During backpropagation, each training example contributes to this value.
+        // It accumulates (adds up) across a batch of examples and is only applied
+        // to the bias when update() is called: bias = bias - (learningRate * delta)
+        // After the update, delta is reset to zero for the next batch.
         double delta;
 };
 
@@ -63,7 +75,11 @@ struct Connection {
         int dest;
         // Weight between the source of the directed edge and destination node.
         double weight;
-        // The accumulated derivative for this weight
+
+        // The accumulated gradient for this connection's weight.
+        // Analogous to delta in NodeInfo, but for the weight rather than the bias.
+        // Accumulates across a batch and is applied in update(): weight = weight - (learningRate * delta)
+        // Reset to zero after each update.
         double delta;
 
 };
