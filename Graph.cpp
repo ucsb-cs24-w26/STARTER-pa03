@@ -91,7 +91,7 @@ std::ostream& operator<<(std::ostream& out, const Connection& c) {
 
 // STUDENT TODO: IMPLEMENT
 void Graph::updateNode(int id, NodeInfo n) {
-    if (true /* stub condition: change this to the correct condition*/) {
+    if (/* id is out of bounds — check if id is a valid index into nodes */ true) {
         cout << "Attempting to update node with id: " << id << " but node does not exist" << endl;
         return;
     }
@@ -106,15 +106,15 @@ NodeInfo* Graph::getNode(int id) const {
 
 // STUDENT TODO: IMPLEMENT
 void Graph::updateConnection(int v, int u, double w) {
-    if (true /* stub condition: change this to the correct condition*/) {
+    if (/* v is out of bounds — check if v is a valid index into nodes */ true) {
         cerr << "Attempting to update connection between " << v << " and " << u << " with weight " << w << " but " << v << " does not exist" << endl;
         exit(1);
     }
-    if (true /* stub condition: change this to the correct condition*/) {
+    if (/* u is out of bounds — check if u is a valid index into nodes */ true) {
         cerr << "Attempting to update connection between " << v << " and " << u << " with weight " << w << " but " << u << " does not exist" << endl;
         exit(1);
     }
-    
+
     return; //stub
 }
 

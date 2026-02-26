@@ -58,10 +58,12 @@ class NeuralNetwork : public Graph {
 
     private:
 
-        // TODO: given the neural nets prediction and the ground truth label, it accumulates gradients for weights and biases. 
+        // TODO: given the neural nets prediction and the ground truth label, it accumulates gradients for weights and biases.
         // each contribution is accumulated in a variable called delta, which resides in every node (for the bias) and every connection (for the weight)
+        // This is the entry point: it initiates the recursion from the input layer.
         bool contribute(double y, double p);
-        // a helper function to contribute. 
+        // This is the recursive helper for contribute(double y, double p).
+        // It performs the DFT, visiting one node per call and recursing into its neighbors.
         double contribute(int nodeId, const double& y, const double& p);
 
          // VERY helpful visit methods for predict and contribute
