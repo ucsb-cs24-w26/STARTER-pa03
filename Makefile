@@ -1,14 +1,17 @@
 CXX=g++
 CXX_FLAGS=-std=c++17
 
-targets=neuralnet test_neuralnet
+targets=neuralnet test_neuralnet visualizer
 
 all: $(targets)
 
-neuralnet: main.o NeuralNetwork.o Graph.o DataLoader.o utility.o
+neuralnet: main.o NeuralNetwork.o Graph.o DataLoader.o utility.o Trace.o
 	$(CXX) $(CXX_FLAGS) $^ -o $@
 
-test_neuralnet: test_neuralnet.o NeuralNetwork.o Graph.o DataLoader.o utility.o tdd.o
+test_neuralnet: test_neuralnet.o NeuralNetwork.o Graph.o DataLoader.o utility.o tdd.o Trace.o
+	$(CXX) $(CXX_FLAGS) $^ -o $@
+
+visualizer: VisualizerDriver.o NeuralNetwork.o Graph.o DataLoader.o utility.o Trace.o
 	$(CXX) $(CXX_FLAGS) $^ -o $@
 
 test_neuralnet.o: test_neuralnet.cpp
@@ -31,6 +34,12 @@ utility.o: utility.cpp utility.hpp
 
 tdd.o: tdd.cpp tdd.hpp 
 	$(CXX) $(CXX_FLAGS) tdd.cpp -c
+
+VisualizerDriver.o: VisualizerDriver.cpp
+	$(CXX) $(CXX_FLAGS) VisualizerDriver.cpp -c
+
+Trace.o: Trace.cpp Trace.hpp
+	$(CXX) $(CXX_FLAGS) Trace.cpp -c
 
 clean:
 	rm -f $(targets) *.o *.gch a.out *.exe
