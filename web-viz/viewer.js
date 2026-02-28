@@ -18,11 +18,26 @@
   const graphLeft = document.getElementById("graphLeft");
   const graphRight = document.getElementById("graphRight");
 
-  const LAYER_WIDTH = 220;
-  const LAYER_PADDING = 30;
-  const NODE_R = 50;
-  const BOX_RX = 12;
-  const BOX_TITLE_H = 52;
+  const REFERENCE_WIDTH = 900;
+  const LAYOUT_DEFAULTS = {
+    LAYER_WIDTH: 210,
+    LAYER_PADDING: 60,
+    NODE_R: 60,
+    BOX_RX: 12,
+    BOX_TITLE_H: 100
+  };
+
+  function getLayoutConstants(containerWidth) {
+    if (!containerWidth || containerWidth <= 0) containerWidth = REFERENCE_WIDTH;
+    const scale = Math.max(0.4, Math.min(1.2, containerWidth / REFERENCE_WIDTH));
+    return {
+      LAYER_WIDTH: Math.round(LAYOUT_DEFAULTS.LAYER_WIDTH * scale),
+      LAYER_PADDING: Math.round(LAYOUT_DEFAULTS.LAYER_PADDING * scale),
+      NODE_R: Math.round(LAYOUT_DEFAULTS.NODE_R * scale),
+      BOX_RX: Math.round(LAYOUT_DEFAULTS.BOX_RX * scale),
+      BOX_TITLE_H: Math.round(LAYOUT_DEFAULTS.BOX_TITLE_H * scale)
+    };
+  }
 
   let mode = "eval";
   let eventsDefault = [];
@@ -257,6 +272,9 @@
       graphEl.innerHTML = "<text x=\"20\" y=\"30\" fill=\"#7f8c8d\">No graph in trace.</text>";
       return;
     }
+
+    const containerWidth = graphEl.parentElement ? graphEl.parentElement.clientWidth : window.innerWidth;
+    const { LAYER_WIDTH, LAYER_PADDING, NODE_R, BOX_RX, BOX_TITLE_H } = getLayoutConstants(containerWidth);
 
     const maxNodes = Math.max(1, ...layers.map((l) => l.length));
     const boxHeight = Math.max(280, maxNodes * (NODE_R * 3.2));
@@ -543,6 +561,12 @@
   resetBtn.addEventListener("click", function () {
     currentIndex = INITIAL_STATE_INDEX;
     refreshBothPanels();
+  });
+
+  let resizeTimeout;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(refreshBothPanels, 100);
   });
 
   loadTracesForMode();
