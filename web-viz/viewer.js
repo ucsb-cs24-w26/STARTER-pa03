@@ -22,6 +22,8 @@
   const LAYOUT_DEFAULTS = {
     LAYER_WIDTH: 210,
     LAYER_PADDING: 60,
+    LAYER_PADDING_LEFT: 20,
+    LAYER_PADDING_TOP: -40,
     NODE_R: 60,
     BOX_RX: 12,
     BOX_TITLE_H: 100
@@ -33,6 +35,8 @@
     return {
       LAYER_WIDTH: Math.round(LAYOUT_DEFAULTS.LAYER_WIDTH * scale),
       LAYER_PADDING: Math.round(LAYOUT_DEFAULTS.LAYER_PADDING * scale),
+      LAYER_PADDING_LEFT: Math.round(LAYOUT_DEFAULTS.LAYER_PADDING_LEFT * scale),
+      LAYER_PADDING_TOP: Math.round(LAYOUT_DEFAULTS.LAYER_PADDING_TOP * scale),
       NODE_R: Math.round(LAYOUT_DEFAULTS.NODE_R * scale),
       BOX_RX: Math.round(LAYOUT_DEFAULTS.BOX_RX * scale),
       BOX_TITLE_H: Math.round(LAYOUT_DEFAULTS.BOX_TITLE_H * scale)
@@ -274,12 +278,12 @@
     }
 
     const containerWidth = graphEl.parentElement ? graphEl.parentElement.clientWidth : window.innerWidth;
-    const { LAYER_WIDTH, LAYER_PADDING, NODE_R, BOX_RX, BOX_TITLE_H } = getLayoutConstants(containerWidth);
+    const { LAYER_WIDTH, LAYER_PADDING, LAYER_PADDING_LEFT, LAYER_PADDING_TOP, NODE_R, BOX_RX, BOX_TITLE_H } = getLayoutConstants(containerWidth);
 
     const maxNodes = Math.max(1, ...layers.map((l) => l.length));
     const boxHeight = Math.max(280, maxNodes * (NODE_R * 3.2));
-    const totalW = numLayers * LAYER_WIDTH + (numLayers + 1) * LAYER_PADDING;
-    const totalH = boxHeight + BOX_TITLE_H + LAYER_PADDING * 2;
+    const totalW = LAYER_PADDING_LEFT + numLayers * (LAYER_WIDTH + LAYER_PADDING) + LAYER_PADDING;
+    const totalH = LAYER_PADDING_TOP + BOX_TITLE_H + boxHeight + LAYER_PADDING;
 
     graphEl.setAttribute("width", totalW);
     graphEl.setAttribute("height", totalH);
@@ -304,8 +308,8 @@
     layers.forEach((layerNodes, layerIdx) => {
       const isInput = layerIdx === 0;
       const isOutput = layerIdx === numLayers - 1;
-      const boxX = LAYER_PADDING + layerIdx * (LAYER_WIDTH + LAYER_PADDING);
-      const boxY = LAYER_PADDING + BOX_TITLE_H;
+      const boxX = LAYER_PADDING_LEFT + layerIdx * (LAYER_WIDTH + LAYER_PADDING);
+      const boxY = LAYER_PADDING_TOP + BOX_TITLE_H;
       const layerLabel = isInput ? "Input Layer" : isOutput ? "Output Layer" : "Hidden Layer";
       const activation = layerNodes.length ? (layerNodes[0].activation || "identity") : "identity";
       const className = isInput || isOutput ? "input" : "hidden";
