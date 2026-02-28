@@ -1,5 +1,6 @@
 // includes
 #include "NeuralNetwork.hpp"
+#include "Trace.hpp"
 using namespace std;
 
 
@@ -96,7 +97,7 @@ bool NeuralNetwork::contribute(double y, double p) {
 }
 // STUDENT TODO: IMPLEMENT
 double NeuralNetwork::contribute(int nodeId, const double& y, const double& p) {
-
+    visitContributeStart(nodeId); // don't remove this line, used for visualization
     // incomingContribution: the error signal returned by a recursive call on a neighbor.
     double incomingContribution = 0;
     // outgoingContribution: built up from this node's neighbors, then scaled by
@@ -192,6 +193,10 @@ NeuralNetwork::NeuralNetwork(istream& in) : Graph() {
     batchSize = 0;
 }
 
+const vector<vector<int> >& NeuralNetwork::getLayers() const {
+    return layers;
+}
+
 void NeuralNetwork::loadNetwork(istream& in) {
     int numLayers(0), totalNodes(0), numNodes(0), weightModifications(0), biasModifications(0); string activationMethod = "identity";
     string junk;
@@ -272,6 +277,15 @@ void NeuralNetwork::visitPredictNode(int vId) {
     NodeInfo* v = nodes.at(vId);
     v->preActivationValue += v->bias;
     v->activate();
+    // visualization use
+    if (viz::isTracing()) {
+        viz::traceNodeState(0, "forward", vId,
+                            v->preActivationValue,
+                            v->postActivationValue,
+                            v->bias,
+                            v->delta,
+                            "current");
+    }
 }
 
 // visitPredictNeighbor: called for each outgoing connection from a dequeued node.
@@ -285,8 +299,35 @@ void NeuralNetwork::visitPredictNeighbor(Connection c) {
     NodeInfo* u = nodes.at(c.dest);
     double w = c.weight;
     u->preActivationValue += v->postActivationValue * w;
+    // visualization use
+    if (viz::isTracing()) {
+        viz::traceEdgeState(0, "forward",
+                            c.source,
+                            c.dest,
+                            c.weight,
+                            c.delta);
+        viz::traceNodeState(0, "forward", c.dest,
+                            u->preActivationValue,
+                            u->postActivationValue,
+                            u->bias,
+                            u->delta,
+                            "neighbor");
+    }
 }
 
+// visitContributeStart: called at the start of the contribution step for a node.
+void NeuralNetwork::visitContributeStart(int vId) {
+    NodeInfo* v = nodes.at(vId);
+    // visualization use
+    if (viz::isTracing()) {
+        viz::traceNodeState(0, "backward", vId,
+                            v->preActivationValue,
+                            v->postActivationValue,
+                            v->bias,
+                            v->delta,
+                            "stack");
+    }
+}
 // visitContributeNode: called after all neighbors of a node have been visited during DFT.
 // outgoingContribution at this point holds the sum of weighted incoming contributions
 // from the next layer. This function:
@@ -301,6 +342,15 @@ void NeuralNetwork::visitContributeNode(int vId, double& outgoingContribution) {
 
     //contribute bias derivative
     v->delta += outgoingContribution;
+    // visualization use
+    if (viz::isTracing()) {
+        viz::traceNodeState(0, "backward", vId,
+                            v->preActivationValue,
+                            v->postActivationValue,
+                            v->bias,
+                            v->delta,
+                            "current");
+    }
 }
 
 // visitContributeNeighbor: called for each outgoing connection during DFT, before visitContributeNode.
@@ -317,6 +367,20 @@ void NeuralNetwork::visitContributeNeighbor(Connection& c, double& incomingContr
 
     // accumulate weight derivative
     c.delta += incomingContribution * v->postActivationValue;
+    // visualization use
+    if (viz::isTracing()) {
+        viz::traceEdgeState(0, "backward",
+                            c.source,
+                            c.dest,
+                            c.weight,
+                            c.delta);
+        viz::traceNodeState(0, "backward", c.source,
+                            v->preActivationValue,
+                            v->postActivationValue,
+                            v->bias,
+                            v->delta,
+                            "neighbor");
+    }
 }
 
 void NeuralNetwork::flush() {

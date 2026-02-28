@@ -20,6 +20,8 @@ class NeuralNetwork : public Graph {
         // use these constructors for loading a premade architecture from a file
         NeuralNetwork(std::string filename);
         NeuralNetwork(std::istream& in);
+        // gets the layer structure (each inner vector is the node ids in that layer).
+        const std::vector<std::vector<int> >& getLayers() const;
 
 
         // TODO: getters / setters
@@ -71,6 +73,8 @@ class NeuralNetwork : public Graph {
         void visitPredictNode(int vId);
         // visits v's neighbor during evaluation
         void visitPredictNeighbor(Connection c);
+        // visits the start of the contribution step
+        void visitContributeStart(int vId);
         // visits the node during contribution
         void visitContributeNode(int vId, double& outgoingContribution);
         // visits the connection during contribution
